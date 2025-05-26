@@ -1,11 +1,21 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { Car } from './interfaces/car.interface';
+import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+// import { Car } from './interfaces/car.interface';
 import { v4 as uuid } from "uuid";
 import { CreateCarDto } from './dto/create-car.dto';
 import { UpdateCarDto } from './dto/update-car.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Car } from './entities/car.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class CarsService {
+
+    constructor(
+        @InjectRepository(Car)
+        private readonly carRepository: Repository<Car>
+    ){
+
+    }
 
     private cars: Car[] = [
         {
@@ -36,13 +46,23 @@ export class CarsService {
         return car
     }
 
-    createCar(createCarDto : CreateCarDto){
-        const newCar: Car = {
-            id: uuid(),
-            ...createCarDto
-        };
-        this.cars.push(newCar)
-        return this.cars;
+    async createCar(createCarDto : CreateCarDto){
+        try {
+            const car = this.carRepository.create(createCarDto)
+            await this.carRepository.save(car)
+
+            return car
+
+        } catch (error) {
+            console.log(error)
+            throw new InternalServerErrorException('Ayuda!')
+        }
+        // const newCar: Car = {
+        //     id: uuid(),
+        //     ...createCarDto
+        // };
+        // this.cars.push(newCar)
+        // return this.cars;
     }
 
     updateCar(id: string, updateCarDto: UpdateCarDto): Car {
